@@ -1,39 +1,49 @@
 #include <stdio.h>
-#include <ctype.h>
 #include <string.h>
+#include <ctype.h>
 
-void caesarEncrypt(char *text, int shift) {
-    for (int i = 0; text[i] != '\0'; i++) {
-        char ch = text[i];
-
+// Encrypt function
+void encrypt(char* message, int key) {
+    for (int i = 0; message[i] != '\0'; i++) {
+        char ch = message[i];
         if (isalpha(ch)) {
             char base = islower(ch) ? 'a' : 'A';
-            text[i] = (ch - base + shift) % 26 + base;
+            message[i] = (ch - base + key) % 26 + base;
+        }
+    }
+}
+
+// Decrypt function
+void decrypt(char* message, int key) {
+    for (int i = 0; message[i] != '\0'; i++) {
+        char ch = message[i];
+        if (isalpha(ch)) {
+            char base = islower(ch) ? 'a' : 'A';
+            message[i] = (ch - base - key + 26) % 26 + base;
         }
     }
 }
 
 int main() {
-    char message[1000];
-    int shift;
-
-    printf("Enter a message to encrypt: ");
-    fgets(message, sizeof(message), stdin);
+    char text[1000];
+    int key;
     
-    // Remove newline character if present
-    size_t len = strlen(message);
-    if (len > 0 && message[len - 1] == '\n') {
-        message[len - 1] = '\0';
-    }
-
-    printf("Enter shift amount: ");
-    scanf("%d", &shift);
-
-    // Ensure shift is within 0-25
-    shift = shift % 26;
-
-    caesarEncrypt(message, shift);
-    printf("Encrypted message: %s\n", message);
-
+    printf("Enter a message: ");
+    fgets(text, sizeof(text), stdin);
+    text[strcspn(text, "\n")] = '\0'; // Remove newline
+    
+    printf("Enter key (1-25): ");
+    scanf("%d", &key);
+    
+    // Make a copy for decryption
+    char encrypted[1000];
+    strcpy(encrypted, text);
+    
+    encrypt(encrypted, key);
+    printf("Encrypted message: %s\n", encrypted);
+    
+    decrypt(encrypted, key);
+    printf("Decrypted message: %s\n", encrypted);
+    
     return 0;
 }
