@@ -1,0 +1,39 @@
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+
+void caesarEncrypt(char *text, int shift) {
+    for (int i = 0; text[i] != '\0'; i++) {
+        char ch = text[i];
+
+        if (isalpha(ch)) {
+            char base = islower(ch) ? 'a' : 'A';
+            text[i] = (ch - base + shift) % 26 + base;
+        }
+    }
+}
+
+int main() {
+    char message[1000];
+    int shift;
+
+    printf("Enter a message to encrypt: ");
+    fgets(message, sizeof(message), stdin);
+    
+    // Remove newline character if present
+    size_t len = strlen(message);
+    if (len > 0 && message[len - 1] == '\n') {
+        message[len - 1] = '\0';
+    }
+
+    printf("Enter shift amount: ");
+    scanf("%d", &shift);
+
+    // Ensure shift is within 0-25
+    shift = shift % 26;
+
+    caesarEncrypt(message, shift);
+    printf("Encrypted message: %s\n", message);
+
+    return 0;
+}
