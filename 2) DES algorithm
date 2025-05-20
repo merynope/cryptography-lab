@@ -1,46 +1,30 @@
 #include <stdio.h>
-#include <stdint.h>
-
-// Simple permutation (swap left and right halves)
-uint64_t initial_permutation(uint64_t block) {
-    return ((block & 0xFFFFFFFF) << 32) | ((block >> 32) & 0xFFFFFFFF);
-}
-
-uint64_t final_permutation(uint64_t block) {
-    return initial_permutation(block); // Reverse of initial permutation
-}
-
-uint32_t feistel(uint32_t half, uint32_t subkey) {
-    return (half ^ subkey); // Simple XOR
-}
-
-uint64_t des_encrypt(uint64_t plaintext, uint32_t subkey) {
-    uint64_t ip = initial_permutation(plaintext);
-    uint32_t L = (ip >> 32) & 0xFFFFFFFF;
-    uint32_t R = ip & 0xFFFFFFFF;
-    
-    uint32_t newR = L ^ feistel(R, subkey);
-    uint32_t newL = R;
-    
-    uint64_t pre_output = ((uint64_t)newL << 32) | newR;
-    return final_permutation(pre_output);
-}
-
-uint64_t des_decrypt(uint64_t ciphertext, uint32_t subkey) {
-    // Since it's just 1 round, encryption and decryption are identical
-    return des_encrypt(ciphertext, subkey);
-}
+#include <openssl/des.h>
+#include <string.h>
 
 int main() {
-    uint64_t plaintext = 0x0123456789ABCDEF;
-    uint32_t key = 0x0F1571C; // 28-bit example subkey
+    DES_cblock key = {0x13, 0x34, 0x57, 0x79, 0x9B, 0xBC, 0xDF, 0xF1}; // 64-bit key
+    DES_key_schedule schedule;
     
-    uint64_t encrypted = des_encrypt(plaintext, key);
-    uint64_t decrypted = des_decrypt(encrypted, key);
+    // Set the key schedule
+    DES_set_key_unchecked(&key, &schedule);
     
-    printf("Plaintext : 0x%016llX\n", plaintext);
-    printf("Encrypted : 0x%016llX\n", encrypted);
-    printf("Decrypted : 0x%016llX\n", decrypted);
+    // Plaintext must be a multiple of 8 bytes (64 bits)
+    unsigned char plaintext[] = "OpenAI12";  // 8 bytes
+    unsigned char ciphertext[8], decryptedtext[8];
+    
+    // Encrypt
+    DES_ecb_encrypt((DES_cblock *)plaintext, (DES_cblock *)ciphertext, &schedule, DES_ENCRYPT);
+    
+    // Decrypt
+    DES_ecb_encrypt((DES_cblock *)ciphertext, (DES_cblock *)decryptedtext, &schedule, DES_DECRYPT);
+    
+    // Output
+    printf("Plaintext:  %s\n", plaintext);
+    printf("Encrypted:  ");
+    for (int i = 0; i < 8; i++) 
+        printf("%02X ", ciphertext[i]);
+    printf("\nDecrypted:  %s\n", decryptedtext);
     
     return 0;
 }
