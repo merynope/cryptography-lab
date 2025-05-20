@@ -1,0 +1,53 @@
+#include <stdio.h>
+#include <string.h>
+#include <openssl/evp.h>
+#include <openssl/rand.h>
+
+#define MAX_LEN 1024
+
+int main() {
+    unsigned char key[16] = "1234567890abcdef"; // 128-bit AES key
+    unsigned char iv[16]; // 128-bit IV for CBC mode
+    unsigned char plaintext[MAX_LEN];
+    unsigned char ciphertext[MAX_LEN + EVP_MAX_BLOCK_LENGTH];
+    unsigned char decryptedtext[MAX_LEN + EVP_MAX_BLOCK_LENGTH];
+    int len, ciphertext_len, decryptedtext_len;
+    // Get plaintext input
+    printf("Enter plaintext: ");
+    fgets((char *)plaintext, MAX_LEN, stdin);
+    plaintext[strcspn((char *)plaintext, "\n")] = '\0'; // remove newline
+    
+    // Generate a random IV
+    if (!RAND_bytes(iv, sizeof(iv))) {
+        fprintf(stderr, "Error generating random IV.\n");
+        return 1;
+    }
+    
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    
+    // AES encryption
+    EVP_EncryptInit_ex(ctx, EVP_aes_128_cbc(), NULL, key, iv);
+    EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, strlen((char *)plaintext));
+    ciphertext_len = len;
+    EVP_EncryptFinal_ex(ctx, ciphertext + len, &len);
+    ciphertext_len += len;
+    
+    printf("\nEncrypted (Hex): ");
+    for (int i = 0; i < ciphertext_len; i++) {
+        printf("%02X ", ciphertext[i]);
+    }
+    printf("\n");
+    
+    // AES decryption
+    EVP_DecryptInit_ex(ctx, EVP_aes_128_cbc(), NULL, key, iv);
+    EVP_DecryptUpdate(ctx, decryptedtext, &len, ciphertext, ciphertext_len);
+    decryptedtext_len = len;
+    EVP_DecryptFinal_ex(ctx, decryptedtext + len, &len);
+    decryptedtext_len += len;
+    decryptedtext[decryptedtext_len] = '\0';
+    
+    printf("Decrypted Text: %s\n", decryptedtext);
+    
+    EVP_CIPHER_CTX_free(ctx);
+    return 0;
+}
