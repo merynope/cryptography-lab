@@ -1,30 +1,46 @@
 #include <stdio.h>
-#include <openssl/des.h>
 #include <string.h>
+#include <openssl/evp.h>
+#include <openssl/des.h>
+
+#define MAX_LEN 1024
 
 int main() {
-    DES_cblock key = {0x13, 0x34, 0x57, 0x79, 0x9B, 0xBC, 0xDF, 0xF1}; // 64-bit key
-    DES_key_schedule schedule;
+    unsigned char key[] = {0x13, 0x34, 0x57, 0x79, 0x9B, 0xBC, 0xDF, 0xF1}; // 8-byte DES key
+    unsigned char plaintext[MAX_LEN];
+    unsigned char ciphertext[MAX_LEN + EVP_MAX_BLOCK_LENGTH];
+    unsigned char decryptedtext[MAX_LEN + EVP_MAX_BLOCK_LENGTH];
+    int len, ciphertext_len, decryptedtext_len;
+    // Prompt for user input
+    printf("Enter plaintext (max %d chars): ", MAX_LEN - 1);
+    fgets((char *)plaintext, MAX_LEN, stdin);
+    plaintext[strcspn((char *)plaintext, "\n")] = '\0';  // Remove newline
     
-    // Set the key schedule
-    DES_set_key_unchecked(&key, &schedule);
-    
-    // Plaintext must be a multiple of 8 bytes (64 bits)
-    unsigned char plaintext[] = "OpenAI12";  // 8 bytes
-    unsigned char ciphertext[8], decryptedtext[8];
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
     
     // Encrypt
-    DES_ecb_encrypt((DES_cblock *)plaintext, (DES_cblock *)ciphertext, &schedule, DES_ENCRYPT);
+    EVP_EncryptInit_ex(ctx, EVP_des_ecb(), NULL, key, NULL);
+    EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, strlen((char *)plaintext));
+    ciphertext_len = len;
+    EVP_EncryptFinal_ex(ctx, ciphertext + len, &len);
+    ciphertext_len += len;
+    
+    printf("\nEncrypted (Hex): ");
+    for (int i = 0; i < ciphertext_len; i++) {
+        printf("%02X ", ciphertext[i]);
+    }
+    printf("\n");
     
     // Decrypt
-    DES_ecb_encrypt((DES_cblock *)ciphertext, (DES_cblock *)decryptedtext, &schedule, DES_DECRYPT);
+    EVP_DecryptInit_ex(ctx, EVP_des_ecb(), NULL, key, NULL);
+    EVP_DecryptUpdate(ctx, decryptedtext, &len, ciphertext, ciphertext_len);
+    decryptedtext_len = len;
+    EVP_DecryptFinal_ex(ctx, decryptedtext + len, &len);
+    decryptedtext_len += len;
+    decryptedtext[decryptedtext_len] = '\0'; // Null terminate
     
-    // Output
-    printf("Plaintext:  %s\n", plaintext);
-    printf("Encrypted:  ");
-    for (int i = 0; i < 8; i++) 
-        printf("%02X ", ciphertext[i]);
-    printf("\nDecrypted:  %s\n", decryptedtext);
+    printf("Decrypted Text: %s\n", decryptedtext);
     
+    EVP_CIPHER_CTX_free(ctx);
     return 0;
 }
