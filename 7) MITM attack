@@ -1,0 +1,92 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+// Function to perform modular exponentiation: (base^exp) % mod
+int modexp(int base, int exp, int mod) {
+  int result = 1;
+  base = base % mod;
+  while (exp > 0) {
+      if (exp % 2 == 1)  // If exp is odd
+          result = (result * base) % mod;
+  
+      exp = exp >> 1;    // exp = exp / 2
+      base = (base * base) % mod;
+  }
+  
+  return result;
+}
+
+int main() {
+  int p, g; // Public parameters
+  // Private keys
+  int a, b;       // Alice and Bob
+  int x, y;       // Attacker's keys with Bob and Alice
+  
+  // Public keys
+  int A, B;       // Alice's and Bob's public keys
+  int K, T;       // Attacker's public keys sent to Bob and Alice
+  
+  // Shared secrets
+  int SA, SB, S1, S2;
+  
+  printf("Enter a small prime number p: ");
+  scanf("%d", &p);
+  
+  printf("Enter a primitive root g (mod %d): ", p);
+  scanf("%d", &g);
+  
+  // Generate private keys
+  printf("Enter Alice's private key (a): ");
+  scanf("%d", &a);
+  
+  printf("Enter Bob's private key (b): ");
+  scanf("%d", &b);
+  
+  printf("Enter Attacker's private key with Bob (x): ");
+  scanf("%d", &x);
+  
+  printf("Enter Attacker's private key with Alice (y): ");
+  scanf("%d", &y);
+  
+  // Compute public keys
+  A = modexp(g, a, p);  // Alice's public key
+  B = modexp(g, b, p);  // Bob's public key
+  
+  // Attacker generates fake keys
+  K = modexp(g, x, p);  // Sent to Bob instead of Alice's key
+  T = modexp(g, y, p);  // Sent to Alice instead of Bob's key
+  
+  // Alice computes shared secret with attacker’s key T
+  SA = modexp(T, a, p);
+  
+  // Bob computes shared secret with attacker’s key K
+  SB = modexp(K, b, p);
+  
+  // Attacker computes secrets with Alice and Bob
+  S1 = modexp(A, y, p); // With Alice
+  S2 = modexp(B, x, p); // With Bob
+  
+  printf("\n=== MITM Simulation ===\n");
+  printf("Public Prime (p): %d\n", p);
+  printf("Generator (g): %d\n", g);
+  
+  printf("\n--- Public Keys ---\n");
+  printf("Alice's public key (A): %d\n", A);
+  printf("Bob's public key (B): %d\n", B);
+  printf("Attacker sends K to Bob: %d\n", K);
+  printf("Attacker sends T to Alice: %d\n", T);
+  
+  printf("\n--- Shared Secrets ---\n");
+  printf("Alice computes SA = T^a mod p: %d\n", SA);
+  printf("Bob computes SB = K^b mod p: %d\n", SB);
+  printf("Attacker computes S1 = A^y mod p (with Alice): %d\n", S1);
+  printf("Attacker computes S2 = B^x mod p (with Bob): %d\n", S2);
+  
+  if (SA == S1 && SB == S2)
+      printf("\n[+] MITM attack successful. Attacker has same shared secrets.\n");
+  else
+      printf("\n[-] MITM attack failed. Shared secrets do not match.\n");
+  
+  return 0;
+}
