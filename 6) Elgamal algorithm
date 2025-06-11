@@ -1,0 +1,60 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+// Efficient (base^exp) mod mod
+long long mod_exp(long long base, long long exp, long long mod) {
+	long long result = 1;
+	base %= mod;
+	while (exp > 0) {
+		if (exp & 1)
+			result = (result * base) % mod;
+		exp >>= 1;
+		base = (base * base) % mod;
+		}
+	return result;
+}
+
+// Return random number in [low, high]
+long long get_random(long long low, long long high) {
+	return low + rand() % (high - low + 1);
+}
+
+int main() {
+	srand(time(NULL));
+	// Step 1: Initialization
+	// Using small safe prime and primitive root for demo
+	long long p = 467;        // A small prime (should be ≥ 2048-bit in real use)
+	long long g = 2;          // A primitive root modulo p
+
+	printf("Public parameters:\n  Prime (p): %lld\n  Generator (g): %lld\n", p, g);
+
+	// Step 2: Key generation for Bob (Receiver)
+	long long x_bob = get_random(2, p - 2);      // Private key of Bob
+	long long y_bob = mod_exp(g, x_bob, p);      // Public key of Bob
+
+	printf("\nBob's Keys:\n  Private: %lld\n  Public: (y = %lld)\n", x_bob, y_bob);
+
+	// Step 3: Key generation and exchange by Alice (Sender)
+	long long x_alice = get_random(2, p - 2);    // Alice's private key (not used in basic exchange)
+	long long k = get_random(2, p - 2);          // Ephemeral key
+
+	long long c1 = mod_exp(g, k, p);             // Part 1 of ciphertext (sent to Bob)
+	long long shared_secret_alice = mod_exp(y_bob, k, p);  // Shared secret computed by Alice
+
+	printf("\nAlice sends:\n  Ephemeral key k: %lld\n  c1 = g^k mod p = %lld\n", k, c1);
+	printf("  Alice's computed shared secret: %lld\n", shared_secret_alice);
+
+	// Step 4: Bob computes the same shared secret using his private key
+	long long shared_secret_bob = mod_exp(c1, x_bob, p);
+
+	printf("\nBob computes shared secret: %lld\n", shared_secret_bob);
+
+	// Step 5: Verify
+	if (shared_secret_alice == shared_secret_bob)
+	    printf("\n✅ Shared secrets match. Key exchange successful!\n");
+	else
+	    printf("\n❌ Shared secrets do not match. Error in exchange.\n");
+
+	return 0;
+}
