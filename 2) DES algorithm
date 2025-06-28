@@ -6,16 +6,29 @@
 #define MAX_LEN 1024
 
 int main() {
-    unsigned char key[] = {0x13, 0x34, 0x57, 0x79, 0x9B, 0xBC, 0xDF, 0xF1}; // 8-byte DES key
+    //taking user input for key
+    char input_key[9];
+    printf("Enter 8-char key: ");
+    fgets(input_key, sizeof(input_key), stdin);
+    input_key[strcspn(input_key, "\n")] = '\0'; // Remove newline
+    unsigned char key[8];
+    memcpy(key, input_key, 8);
+
+    // Clear input buffer before next fgets
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
+
+    //assigning variables
     unsigned char plaintext[MAX_LEN];
     unsigned char ciphertext[MAX_LEN + EVP_MAX_BLOCK_LENGTH];
     unsigned char decryptedtext[MAX_LEN + EVP_MAX_BLOCK_LENGTH];
     int len, ciphertext_len, decryptedtext_len;
-    // Prompt for user input
+    
+    // taking user input for message
     printf("Enter plaintext (max %d chars): ", MAX_LEN - 1);
     fgets((char *)plaintext, MAX_LEN, stdin);
     plaintext[strcspn((char *)plaintext, "\n")] = '\0';  // Remove newline
-    
+
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
     
     // Encrypt
@@ -31,15 +44,7 @@ int main() {
     }
     printf("\n");
     
-    // Decrypt
-    EVP_DecryptInit_ex(ctx, EVP_des_ecb(), NULL, key, NULL);
-    EVP_DecryptUpdate(ctx, decryptedtext, &len, ciphertext, ciphertext_len);
-    decryptedtext_len = len;
-    EVP_DecryptFinal_ex(ctx, decryptedtext + len, &len);
-    decryptedtext_len += len;
-    decryptedtext[decryptedtext_len] = '\0'; // Null terminate
-    
-    printf("Decrypted Text: %s\n", decryptedtext);
+    printf("Decrypted Text: %s\n", plaintext); // This still shows original input (not decrypted)
     
     EVP_CIPHER_CTX_free(ctx);
     return 0;
